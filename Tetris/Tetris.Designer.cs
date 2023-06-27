@@ -28,8 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.Field = new System.Windows.Forms.PictureBox();
             this.Preview = new System.Windows.Forms.PictureBox();
+            this.Timer = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.Field)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Preview)).BeginInit();
             this.SuspendLayout();
@@ -52,6 +54,12 @@
             this.Preview.TabStop = false;
             this.Preview.Paint += new System.Windows.Forms.PaintEventHandler(this.Preview_Paint);
             // 
+            // Timer
+            // 
+            this.Timer.Enabled = true;
+            this.Timer.Interval = 1000;
+            this.Timer.Tick += new System.EventHandler(this.Timer_Tick);
+            // 
             // Tetris
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
@@ -66,7 +74,6 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Tetris";
             this.Load += new System.EventHandler(this.Tetris_Load);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Tetris_KeyDown);
             ((System.ComponentModel.ISupportInitialize)(this.Field)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Preview)).EndInit();
             this.ResumeLayout(false);
@@ -77,6 +84,7 @@
 
         private System.Windows.Forms.PictureBox Field;
         private System.Windows.Forms.PictureBox Preview;
+        private System.Windows.Forms.Timer Timer;
     }
 }
 

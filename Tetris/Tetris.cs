@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Drawing;
-using System.Security.Policy;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace Tetris
 {
     public partial class Tetris : Form
     {
-
-        private const int UNIT = 35,
+        internal const int UNIT = 35,
             COL = 10, ROW = 20;
-        // private int
-        private Graphics graphF, graphP;
-        private Bitmap bitmapF, bitmapP;
-        private Pen pen = new Pen(Color.Gray);
+
+        internal static Tetro tetro, tetroNext = Tetro.New();
 
         public Tetris()
         {
@@ -28,22 +23,32 @@ namespace Tetris
             Field.Location = new Point(UNIT, UNIT);
             Field.Size = new Size(COL * UNIT + 1, ROW * UNIT + 1);
             Field.BackColor = Color.Black;
-            bitmapF = new Bitmap(Field.Width, Field.Height);
-            graphF = Graphics.FromImage(bitmapF);
+            Tetro.field = new Bitmap(Field.Width, Field.Height);
+            Graphics g = Graphics.FromImage(Tetro.field);
+            Pen pen = new Pen(Color.Gray), penFrame = new Pen(Color.White);
             for (int i = 0; i <= COL; i++)
-                graphF.DrawLine(pen, i * UNIT, 0, i * UNIT, bitmapF.Height);
+                g.DrawLine(pen, i * UNIT, 0, i * UNIT, Tetro.field.Height);
             for (int i = 0; i <= ROW; i++)
-                graphF.DrawLine(pen, 0, i * UNIT, bitmapF.Width, i * UNIT);
+                g.DrawLine(pen, 0, i * UNIT, Tetro.field.Width, i * UNIT);
+            g.DrawRectangle(penFrame, 0, 0, COL * UNIT, ROW * UNIT);
+            g.Dispose();
             Preview.Location = new Point((COL + 2) * UNIT, UNIT);
             Preview.Size = new Size (4 * UNIT + 1, 4 * UNIT + 1);
             Preview.BackColor = Color.Black;
-            bitmapP = new Bitmap(Preview.Width, Preview.Height);
-            graphP = Graphics.FromImage(bitmapP);
+            Tetro.preview = new Bitmap(Preview.Width, Preview.Height);
+            g = Graphics.FromImage(Tetro.preview);
             for (int i = 0; i <= 4; i++)
-                graphP.DrawLine(pen, i * UNIT, 0, i * UNIT, bitmapP.Height);
-            for (int i = 0; i <= 4; i++)
-                graphP.DrawLine(pen, 0, i * UNIT, bitmapP.Width, i * UNIT);
+            {
+                g.DrawLine(pen, i * UNIT, 0, i * UNIT, Tetro.preview.Height);
+                g.DrawLine(pen, 0, i * UNIT, Tetro.preview.Width, i * UNIT);
+            }
+            g.DrawRectangle(penFrame, 0, 0, 4 * UNIT, 4 * UNIT);
+            // Tetris
+            tetro = tetroNext.Inherit();
+            tetroNext = Tetro.New();
             // Control
+            Timer.Enabled = true;
+            Timer.Interval = 1000;
             this.KeyPreview = true;
         }
 
@@ -51,37 +56,55 @@ namespace Tetris
 
         private void Field_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.DrawImage(bitmapF, 0, 0);
+            e.Graphics.DrawImage(Tetro.field, 0, 0);
+            e.Graphics.DrawImage(tetro.Show(), tetro.x * UNIT, tetro.y * UNIT);
         }
 
         private void Preview_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.DrawImage(bitmapP, 0, 0);
+            e.Graphics.DrawImage(Tetro.preview, 0, 0);
+            e.Graphics.DrawImage(tetroNext.Show(), 0, 0);
         }
 
         #region Keyboard Control
-        private void Tetris_KeyDown(object sender, KeyEventArgs e)
+        private void Timer_Tick(object sender, EventArgs e)
         {
-
+            tetro.Fall();
+            Field.Refresh();
+            Preview.Refresh();
         }
 
         protected override bool ProcessDialogKey(Keys keyData)
         {
             switch (keyData)
             {
-                case Keys.Up:
-                case Keys.Down:
                 case Keys.Left:
-                case Keys.Right:
                 case Keys.A:
-                case Keys.S:
-                case Keys.W:
+                    tetro.Left();
+                    break;
+                case Keys.Right:
                 case Keys.D:
-                    return true;
+                    tetro.Right();
+                    break;
+                case Keys.Down:
+                case Keys.S:
+                    tetro.Fall();
+                    Preview.Refresh();
+                    break;
+                case Keys.Up:
+                case Keys.W:
+                    tetro.Rotate();
+                    break;
+                case Keys.Space:
+                case Keys.Enter:
+                    tetro.Land();
+                    Preview.Refresh();
+                    break;
                 case Keys.Escape:
                     this.Close();
                     return true;
             }
+            Field.Refresh();
             return false;
         }
         #endregion
