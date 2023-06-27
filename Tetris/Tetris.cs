@@ -57,6 +57,7 @@ namespace Tetris
         private void Field_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.DrawImage(Tetro.field, 0, 0);
+            e.Graphics.DrawImage(tetro.Hint(), tetro.x * UNIT, tetro.ymax * UNIT);
             e.Graphics.DrawImage(tetro.Show(), tetro.x * UNIT, tetro.y * UNIT);
         }
 
