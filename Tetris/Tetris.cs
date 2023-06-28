@@ -18,7 +18,6 @@ namespace Tetris
         private bool hint = false, clearRow = false;
         private static readonly Pen pen = new Pen(Color.Gray),
             penFrame = new Pen(Color.White);
-        private static readonly Brush eraser = new SolidBrush(Color.Transparent);
         private readonly Random random = new Random();
 
         public Tetris()
@@ -130,9 +129,14 @@ namespace Tetris
                             g.DrawLine(pen, x * UNIT, (yline + 1) * UNIT, 
                                 (x + 1) * UNIT, (yline + 1) * UNIT);
                     }
-                    //Bitmap imageAbove = field.Clone(new Rectangle(0, 0, field.Width, yline * UNIT), field.PixelFormat);
-                    g.FillRectangle(eraser, 0, 0, field.Width, (yline + 1) * UNIT);
-                    //g.DrawImage(imageAbove, 0, UNIT);
+                    g.DrawImage(field.Clone(new Rectangle(
+                        0, 0, field.Width, yline * UNIT),
+                        field.PixelFormat), 0, UNIT);
+                    g.FillRectangle(new SolidBrush(Color.Black), 
+                        1, 1, COL * UNIT - 1, UNIT - 1);
+                    g.DrawLine(pen, 0, 0, field.Width, 0);
+                    for (int x = 0; x <= COL; x++)
+                        g.DrawLine(pen, x * UNIT, 0, x * UNIT, UNIT);
                 }
                 clearRow = false;
             }
