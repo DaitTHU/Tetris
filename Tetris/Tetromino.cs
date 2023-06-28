@@ -18,7 +18,7 @@ namespace Tetris
         public static Tetromino J => new Tetromino(new int[] { 0x2260, 0x0E20, 0x6440, 0x0470 }, Color.Blue);
         public static Tetromino Z => new Tetromino(new int[] { 0x0C60, 0x2640, 0x0C60, 0x2640 }, Color.Violet);
         public static Tetromino S => new Tetromino(new int[] { 0x0360, 0x4620, 0x0360, 0x4620 }, Color.Purple);
-        public static Tetromino X => new Tetromino(new int[] { 0x0040, 0x0040, 0x0040, 0x0040 }, Color.White);
+        public static Tetromino X => new Tetromino(new int[] { 0x8000, 0x8000, 0x8000, 0x8000 }, Color.White);
         public static Tetromino[] All = { I, O, T, L, J, Z, S, X };
         // public static int Count = All.Length;
     }

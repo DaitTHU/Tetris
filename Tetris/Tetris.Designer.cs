@@ -32,6 +32,8 @@
             this.Field = new System.Windows.Forms.PictureBox();
             this.Preview = new System.Windows.Forms.PictureBox();
             this.Timer = new System.Windows.Forms.Timer(this.components);
+            this.Score = new System.Windows.Forms.Label();
+            this.Lines = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.Field)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Preview)).BeginInit();
             this.SuspendLayout();
@@ -60,6 +62,32 @@
             this.Timer.Interval = 1000;
             this.Timer.Tick += new System.EventHandler(this.Timer_Tick);
             // 
+            // Score
+            // 
+            this.Score.AutoSize = true;
+            this.Score.BackColor = System.Drawing.Color.Transparent;
+            this.Score.Font = new System.Drawing.Font("Consolas", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Score.ForeColor = System.Drawing.Color.White;
+            this.Score.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.Score.Location = new System.Drawing.Point(66, 140);
+            this.Score.Name = "Score";
+            this.Score.Size = new System.Drawing.Size(107, 37);
+            this.Score.TabIndex = 2;
+            this.Score.Text = "score";
+            // 
+            // Lines
+            // 
+            this.Lines.AutoSize = true;
+            this.Lines.BackColor = System.Drawing.Color.Transparent;
+            this.Lines.Font = new System.Drawing.Font("Consolas", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Lines.ForeColor = System.Drawing.Color.White;
+            this.Lines.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.Lines.Location = new System.Drawing.Point(196, 140);
+            this.Lines.Name = "Lines";
+            this.Lines.Size = new System.Drawing.Size(125, 37);
+            this.Lines.TabIndex = 3;
+            this.Lines.Text = "label1";
+            // 
             // Tetris
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
@@ -67,6 +95,8 @@
             this.AutoSize = true;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(372, 210);
+            this.Controls.Add(this.Lines);
+            this.Controls.Add(this.Score);
             this.Controls.Add(this.Preview);
             this.Controls.Add(this.Field);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -78,6 +108,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.Field)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Preview)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -86,6 +117,8 @@
         private System.Windows.Forms.PictureBox Field;
         private System.Windows.Forms.PictureBox Preview;
         private System.Windows.Forms.Timer Timer;
+        private System.Windows.Forms.Label Score;
+        private System.Windows.Forms.Label Lines;
     }
 }
 
