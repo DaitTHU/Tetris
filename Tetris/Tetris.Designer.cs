@@ -40,7 +40,7 @@
             // 
             // Field
             // 
-            this.Field.Location = new System.Drawing.Point(69, 62);
+            this.Field.Location = new System.Drawing.Point(73, 46);
             this.Field.Name = "Field";
             this.Field.Size = new System.Drawing.Size(100, 50);
             this.Field.TabIndex = 0;
@@ -49,7 +49,7 @@
             // 
             // Preview
             // 
-            this.Preview.Location = new System.Drawing.Point(203, 62);
+            this.Preview.Location = new System.Drawing.Point(203, 46);
             this.Preview.Name = "Preview";
             this.Preview.Size = new System.Drawing.Size(100, 50);
             this.Preview.TabIndex = 1;
@@ -69,7 +69,7 @@
             this.Score.Font = new System.Drawing.Font("Consolas", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Score.ForeColor = System.Drawing.Color.White;
             this.Score.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.Score.Location = new System.Drawing.Point(66, 140);
+            this.Score.Location = new System.Drawing.Point(66, 125);
             this.Score.Name = "Score";
             this.Score.Size = new System.Drawing.Size(107, 37);
             this.Score.TabIndex = 2;
@@ -82,11 +82,11 @@
             this.Lines.Font = new System.Drawing.Font("Consolas", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Lines.ForeColor = System.Drawing.Color.White;
             this.Lines.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.Lines.Location = new System.Drawing.Point(196, 140);
+            this.Lines.Location = new System.Drawing.Point(196, 125);
             this.Lines.Name = "Lines";
-            this.Lines.Size = new System.Drawing.Size(125, 37);
+            this.Lines.Size = new System.Drawing.Size(107, 37);
             this.Lines.TabIndex = 3;
-            this.Lines.Text = "label1";
+            this.Lines.Text = "lines";
             // 
             // Tetris
             // 
@@ -94,7 +94,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(372, 210);
+            this.ClientSize = new System.Drawing.Size(374, 260);
             this.Controls.Add(this.Lines);
             this.Controls.Add(this.Score);
             this.Controls.Add(this.Preview);

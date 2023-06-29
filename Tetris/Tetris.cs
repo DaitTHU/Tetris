@@ -1,171 +1,163 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using static Tetris.Const;
 
 namespace Tetris
 {
     public partial class Tetris : Form
     {
-        public const int UNIT = 35,
-            COL = 10, ROW = 20;
-
-        private readonly Bitmap background;
-        private Bitmap field, preview;
-        private Tetro tetro, tetroNext = Tetro.New(),
-            obstacle = new Tetro(7, 0);
+        private Tetro tetro = new Tetro(0, 0), 
+            tetroNext = Tetro.New();
         private int score = 0, lines = 0;
-
         private bool hint = false, clearRow = false;
-        private static readonly Pen pen = new Pen(Color.Gray),
-            penFrame = new Pen(Color.White);
-        private readonly Random random = new Random();
+        private Block obstacle = new Block(0, 0, lineColor);
+        private readonly Bitmap background, field, preview;
 
         public Tetris()
         {
             InitializeComponent();
             // Form Appearance
-            this.ClientSize = new Size((COL + 7) * UNIT, (ROW + 2) * UNIT);
+            this.ClientSize = new Size(Unit(COL + 7), Unit(ROW + 2));
             this.BackColor = Color.Black;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             // Field
             Field.Location = new Point(UNIT, UNIT);
-            Field.Size = new Size(COL * UNIT + 1, ROW * UNIT + 1);
+            Field.Size = new Size(Unit(COL) + 1, Unit(ROW) + 1);
             Field.BackColor = Color.Black;
             background = new Bitmap(Field.Width, Field.Height);
             field = new Bitmap(Field.Width, Field.Height);
             // Preview
-            Preview.Location = new Point((COL + 2) * UNIT, UNIT);
-            Preview.Size = new Size(4 * UNIT + 1, 4 * UNIT + 1);
+            Preview.Location = new Point(Unit(COL + 2), UNIT);
+            Preview.Size = new Size(Unit(4) + 1, Unit(4) + 1);
             Preview.BackColor = Color.Black;
             preview = new Bitmap(Preview.Width, Preview.Height);
             // Label
-            Score.Location = new Point((COL + 2) * UNIT, 6 * UNIT);
-            Lines.Location = new Point((COL + 2) * UNIT, 8 * UNIT);
-            Score.Size = Lines.Size = new Size(4 * UNIT, UNIT);
+            Score.Location = new Point(Unit(COL + 2), Unit(6));
+            Lines.Location = new Point(Unit(COL + 2), Unit(8));
+            Score.Width = Lines.Width = Unit(4);
             // Control
             Timer.Enabled = true;
             this.KeyPreview = true;
             NewGame();
         }
-
-        private void Tetris_Load(object sender, EventArgs e) { }
-
+        
+        private void Tetris_Load(object sender, EventArgs e)
+        {
+            // Field background
+            Graphics g = Graphics.FromImage(background);
+            for (int x = 0; x <= COL; x++)
+                g.DrawLine(penGrid, Unit(x), 0, Unit(x), field.Height);
+            for (int y = 0; y <= ROW; y++)
+                g.DrawLine(penGrid, 0, Unit(y), field.Width, Unit(y));
+            g.Dispose();
+            // Preview background
+            g = Graphics.FromImage(preview);
+            for (int i = 0; i <= 4; i++)
+            {
+                g.DrawLine(penGrid, Unit(i), 0, Unit(i), preview.Height);
+                g.DrawLine(penGrid, 0, Unit(i), preview.Width, Unit(i));
+            }
+            g.DrawRectangle(pen, 0, 0, Unit(4), Unit(4));
+            g.Dispose();
+        }
+        
         #region game code
         private void NewGame()
         {
             score = lines = 0;
             Score.Text = "SCORE\n" + score.ToString();
             Lines.Text = "LINES\n" + lines.ToString();
+            Timer.Stop();
             Timer.Interval = 1000;
-            // Field
-            Graphics g = Graphics.FromImage(background);
-            for (int x = 0; x <= COL; x++)
-                g.DrawLine(pen, x * UNIT, 0, x * UNIT, field.Height);
-            for (int y = 0; y <= ROW; y++)
-                g.DrawLine(pen, 0, y * UNIT, field.Width, y * UNIT);
-            g.Dispose();
-            // Preview
-            g = Graphics.FromImage(preview);
-            for (int i = 0; i <= 4; i++)
-            {
-                g.DrawLine(pen, i * UNIT, 0, i * UNIT, preview.Height);
-                g.DrawLine(pen, 0, i * UNIT, preview.Width, i * UNIT);
-            }
-            g.DrawRectangle(penFrame, 0, 0, 4 * UNIT, 4 * UNIT);
-            g.Dispose();
-            //Obstacle();
-            // Tetro
-            tetro = tetroNext.Inherit();
-            tetroNext = Tetro.New();
-        }
-
-        private void Fall()
-        {
-            if (tetro.y < tetro.ymax)
-                tetro.y++;
-            else
-                Land();
-        }
-
-        private void Land()
-        {
-            tetro.y = tetro.ymax;
-            score++;
+            Timer.Start();
+            Tetro.Initialize();
             Graphics g = Graphics.FromImage(field);
-            g.DrawImage(tetro.Show(true), tetro.x * UNIT, tetro.y * UNIT);
+            g.Clear(Color.Transparent);
+            g.Dispose();
+            //AddObstacle();
+            // Tetro
+            tetro.Move(tetroNext);
+            tetroNext.Change();
+            Field.Refresh();
+            Preview.Refresh();
+        }
+
+        private void ClearRow()
+        {
+            score++; 
+            Score.Text = "SCORE\n" + score.ToString();
+            System.Threading.Thread.Sleep(Timer.Interval / 10);
+            Graphics g = Graphics.FromImage(field);
+            g.DrawImage(tetro.Show(true), tetro.XU, tetro.YU);
+            if (Tetro.Overflow)
+            {
+                Timer.Stop();
+                new InfoBox("game over!");
+                NewGame();
+                return;
+            }
             // clear full row(s)
             var fullRow = new bool[4];
-            for (int dy = Math.Max(0, -tetro.y); dy < Math.Min(4, ROW - tetro.y); dy++)
+            for (int dy = Math.Max(0, -tetro.Y); 
+                dy < Math.Min(4, ROW - tetro.Y); dy++)
             {
                 fullRow[dy] = true;
                 for (int x = 0; x < COL; x++)
-                    fullRow[dy] &= Tetro.map[x, tetro.y + dy];
+                    fullRow[dy] &= Tetro.map[x, tetro.Y + dy];
                 if (fullRow[dy])
                 {
+                    clearRow = true;
                     g.FillRectangle(new SolidBrush(Color.White),
-                        0, (tetro.y + dy) * UNIT, field.Width, UNIT);
+                        0, Unit(tetro.Y + dy), field.Width, UNIT);
                     lines++; score += 200;
                     Lines.Text = "LINES\n" + lines.ToString();
                 }
             }
-            if (fullRow[0] | fullRow[1] | fullRow[2] | fullRow[3])
+            if (clearRow)
             {
-                clearRow = true;
                 score -= 100; // 200 * line - 100;
+                if (lines > 19)
+                {
+                    if (lines < 310)
+                        Timer.Interval = (31 - lines / 10) * (31 - lines / 10) + 100;
+                    else
+                        Timer.Interval = 100;
+                }
+
                 Field.Refresh();
                 System.Threading.Thread.Sleep(Timer.Interval * 3 / 10);
                 for (int dy = 0; dy < 4; dy++)
                 {
                     if (!fullRow[dy])
                         continue;
-                    int yline = tetro.y + dy;
+                    int yline = tetro.Y + dy;
+                    g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                    Bitmap fieldAbove = field.Clone(new Rectangle(0, 0, field.Width, Unit(yline)), field.PixelFormat);
+                    g.FillRectangle(eraser, 0, 0, field.Width, Unit(yline + 1) + 1);
+                    g.DrawImage(fieldAbove, 0, UNIT);
                     for (int x = 0; x < COL; x++)
                     {
                         for (int y = yline; y > 0; y--)
                             Tetro.map[x, y] = Tetro.map[x, y - 1];
                         Tetro.map[x, 0] = false;
-                        if ((yline + 1 >= ROW || !Tetro.map[x, yline + 1]) & !Tetro.map[x, yline])
-                            g.DrawLine(pen, x * UNIT, (yline + 1) * UNIT, 
-                                (x + 1) * UNIT, (yline + 1) * UNIT);
+                        if (Tetro.map[x, yline] || (yline + 1 < ROW && Tetro.map[x, yline + 1]))
+                            g.DrawLine(pen, Unit(x), Unit(yline + 1), Unit(x + 1), Unit(yline + 1));
                     }
-                    g.DrawImage(field.Clone(new Rectangle(
-                        0, 0, field.Width, yline * UNIT),
-                        field.PixelFormat), 0, UNIT);
-                    g.FillRectangle(new SolidBrush(Color.Black), 
-                        1, 1, COL * UNIT - 1, UNIT - 1);
-                    g.DrawLine(pen, 0, 0, field.Width, 0);
-                    for (int x = 0; x <= COL; x++)
-                        g.DrawLine(pen, x * UNIT, 0, x * UNIT, UNIT);
                 }
                 clearRow = false;
             }
             Score.Text = "SCORE\n" + score.ToString();
-            tetro = tetroNext.Inherit();
-            tetroNext = Tetro.New();
+            g.Dispose();
+            tetro.Move(tetroNext);
+            tetroNext.Change();
             Field.Refresh();
             Preview.Refresh();
+            Timer.Start();
         }
 
-        private void Swap()
-        {
-            Tetro tetroSwap = tetroNext.Copy();
-            tetroSwap.Coordinate = tetro.Coordinate;
-            foreach (var dx in new int[] { 0, 1, 1, -3, -1 })
-            {
-                tetroSwap.x += dx;
-                if (tetroSwap.Feasible())
-                {
-                    tetro.Coordinate = tetroNext.Coordinate;
-                    (tetro, tetroNext) = (tetroSwap, tetro);
-                    tetro.UpdateYmax();
-                    Preview.Refresh();
-                    return;
-                }
-            }            
-        }
-        
-        private void Obstacle()
+        private void AddObstacle()
         {
             // obstacle
             Graphics g = Graphics.FromImage(field);
@@ -175,19 +167,22 @@ namespace Tetris
                 do
                 {
                     int index = random.Next(COL * ROW / 2);
-                    obstacle.x = index % COL;
-                    obstacle.y = index / COL + ROW / 2;
-                    if (Tetro.map[obstacle.x, obstacle.y])
+                    obstacle.X = index % COL;
+                    obstacle.Y = index / COL + ROW / 2;
+                    if (obstacle.Occupied)
                         continue;
                     for (int x = 0; x < COL; x++)
-                        if (!(x == obstacle.x || Tetro.map[x, obstacle.y]))
+                    {
+                        if (x == obstacle.X)
+                            continue;
+                        if (!Tetro.map[x, obstacle.Y])
                         {
                             fullrow = false;
                             break;
                         }
+                    }
                 } while (fullrow);
-                Tetro.map[obstacle.x, obstacle.y] = true;
-                g.DrawImage(obstacle.Show(true), obstacle.x * UNIT, obstacle.y * UNIT);
+                g.DrawImage(obstacle.Show(), obstacle.XU, obstacle.YU);
             }
             g.Dispose();
         }
@@ -195,15 +190,15 @@ namespace Tetris
 
         private void Field_Paint(object sender, PaintEventArgs e)
         {
-            //e.Graphics.DrawImage(background, 0, 0);
+            e.Graphics.DrawImage(background, 0, 0);
             e.Graphics.DrawImage(field, 0, 0);
             if (!clearRow)
             {
                 if (hint)
-                    e.Graphics.DrawImage(tetro.Hint(), tetro.x * UNIT, tetro.ymax * UNIT);
-                e.Graphics.DrawImage(tetro.Show(), tetro.x * UNIT, tetro.y * UNIT);
+                    e.Graphics.DrawImage(tetro.Hint(), tetro.XU, tetro.YmaxU);
+                e.Graphics.DrawImage(tetro.Show(), tetro.XU, tetro.YU);
             }
-            //e.Graphics.DrawRectangle(penFrame, 0, 0, COL * UNIT, ROW * UNIT);
+            //e.Graphics.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
         }
 
         private void Preview_Paint(object sender, PaintEventArgs e)
@@ -215,7 +210,8 @@ namespace Tetris
         #region Keyboard Control
         private void Timer_Tick(object sender, EventArgs e)
         {
-            Fall();
+            if (!tetro.Fall())
+                ClearRow();
             Field.Refresh();
         }
 
@@ -237,17 +233,33 @@ namespace Tetris
                     break;
                 case Keys.Down:
                 case Keys.S:
-                    Fall();
+                    if (!tetro.Fall())
+                        ClearRow();
                     break;
                 case Keys.Space:
                 case Keys.Enter:
-                    Land();
+                    tetro.Land();
+                    ClearRow();
                     break;
                 case Keys.E: // hint
                     hint = !hint;
                     break;
                 case Keys.Q: // swap
-                    Swap();
+                    tetro.Swap(ref tetroNext);
+                    Preview.Refresh();
+                    break;
+                case Keys.R: // restart
+                    /*
+                    CheckBox infoBox = new CheckBox("restart?");
+                    Timer.Stop();
+                    if (infoBox.ShowDialog() == DialogResult.Yes)
+                    */
+                        NewGame();
+                    break;
+                case Keys.P: // pause
+                    Timer.Stop();
+                    new InfoBox("pausing...");
+                    Timer.Start();
                     break;
                 case Keys.Escape:
                     this.Close();
