@@ -88,11 +88,9 @@ namespace Tetris
                     if (fixTetro)
                     { // when the tetro is to fix
                         if (y + dy < 0)
-                        {
                             overflow = true; // game over
-                            return bitmap;
-                        }
-                        map[x + dx, y + dy] = true;
+                        else
+                            map[x + dx, y + dy] = true;
                     }
                     g.FillRectangle(brush, Unit(dx), Unit(dy), UNIT, UNIT);
                     g.DrawRectangle(pen, Unit(dx), Unit(dy), UNIT, UNIT);
@@ -199,6 +197,24 @@ namespace Tetris
             code = Tetromino.All[id].code[spin];
         }
 
+        public void RotateBack()
+        {
+            spin = (spin + 3) % Tetromino.SpinMod;
+            code = Tetromino.All[id].code[spin];
+            foreach (var dx in new int[] { 0, 1, 1, -3, -1 })
+            {
+                x += dx;
+                if (Feasible())
+                {
+                    UpdateYmax();
+                    return;
+                }
+            }
+            x += 2;
+            spin = (spin + 1) % Tetromino.SpinMod;
+            code = Tetromino.All[id].code[spin];
+        }
+
         public void Swap(ref Tetro that)
         {
             (ExceptXY, that.ExceptXY) = (that.ExceptXY, ExceptXY);
@@ -233,7 +249,7 @@ namespace Tetris
         #endregion
     }
 
-    public struct Block
+    public class Block
     {
         private int x, y;
         private readonly Color color;

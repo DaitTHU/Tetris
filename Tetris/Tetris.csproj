@@ -52,6 +52,7 @@
     <Compile Include="CheckBox.Designer.cs">
       <DependentUpon>CheckBox.cs</DependentUpon>
     </Compile>
+    <Compile Include="Const.cs" />
     <Compile Include="Tetris.cs">
       <SubType>Form</SubType>
     </Compile>

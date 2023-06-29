@@ -69,19 +69,21 @@ namespace Tetris
             score = lines = 0;
             Score.Text = "SCORE\n" + score.ToString();
             Lines.Text = "LINES\n" + lines.ToString();
-            Timer.Stop();
             Timer.Interval = 1000;
-            Timer.Start();
             Tetro.Initialize();
-            Graphics g = Graphics.FromImage(field);
-            g.Clear(Color.Transparent);
-            g.Dispose();
-            //AddObstacle();
-            // Tetro
+            Graphics.FromImage(field).Clear(Color.Transparent);
+            AddObstacle();
+            NewTetro();
+        }
+
+        private void NewTetro()
+        {
             tetro.Move(tetroNext);
             tetroNext.Change();
             Field.Refresh();
             Preview.Refresh();
+            Timer.Stop();
+            Timer.Start(); // restart timer
         }
 
         private void ClearRow()
@@ -93,6 +95,7 @@ namespace Tetris
             g.DrawImage(tetro.Show(fixTetro: true), tetro.XU, tetro.YU);
             if (Tetro.Overflow)
             {
+                Field.Refresh();
                 Timer.Stop();
                 new InfoBox("game over!");
                 NewGame();
@@ -109,7 +112,7 @@ namespace Tetris
                 if (fullRow[dy])
                 {
                     clearRow = true;
-                    g.FillRectangle(new SolidBrush(Color.White),
+                    g.FillRectangle(brushLine, 
                         0, Unit(tetro.Y + dy), field.Width, UNIT);
                     lines++; score += 200;
                     Lines.Text = "LINES\n" + lines.ToString();
@@ -117,8 +120,6 @@ namespace Tetris
             }
             if (clearRow)
             {
-                score -= 100; // score = 200 * clearline - 100;
-                Timer.Interval = 100 + IntSq(Math.Max(30 - lines / 10, 0));
                 Field.Refresh();
                 System.Threading.Thread.Sleep(Timer.Interval * 3 / 10);
                 for (int dy = 0; dy < CELL; dy++)
@@ -139,15 +140,13 @@ namespace Tetris
                             g.DrawLine(pen, Unit(x), Unit(yline + 1), Unit(x + 1), Unit(yline + 1));
                     }
                 }
+                score -= 100; // score = 200 * clearline - 100;
+                Score.Text = "SCORE\n" + score.ToString();
+                Timer.Interval = 100 + IntSq(Math.Max(30 - lines / 10, 0));
                 clearRow = false;
             }
-            Score.Text = "SCORE\n" + score.ToString();
             g.Dispose();
-            tetro.Move(tetroNext);
-            tetroNext.Change();
-            Field.Refresh();
-            Preview.Refresh();
-            Timer.Start();
+            NewTetro();
         }
 
         private void AddObstacle()
@@ -223,6 +222,9 @@ namespace Tetris
                 case Keys.Up:
                 case Keys.W:
                     tetro.Rotate();
+                    break;
+                case Keys.Z:
+                    tetro.RotateBack();
                     break;
                 case Keys.Down:
                 case Keys.S:
