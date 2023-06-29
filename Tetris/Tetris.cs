@@ -11,7 +11,7 @@ namespace Tetris
             tetroNext = Tetro.New();
         private int score = 0, lines = 0;
         private bool hint = false, clearRow = false;
-        private Block obstacle = new Block(0, 0, lineColor);
+        private Block obstacle = new Block(0, 0);
         private readonly Bitmap background, field, preview;
 
         public Tetris()
@@ -30,13 +30,13 @@ namespace Tetris
             field = new Bitmap(Field.Width, Field.Height);
             // Preview
             Preview.Location = new Point(Unit(COL + 2), UNIT);
-            Preview.Size = new Size(Unit(4) + 1, Unit(4) + 1);
+            Preview.Size = new Size(Unit(CELL) + 1, Unit(CELL) + 1);
             Preview.BackColor = Color.Black;
             preview = new Bitmap(Preview.Width, Preview.Height);
             // Label
             Score.Location = new Point(Unit(COL + 2), Unit(6));
             Lines.Location = new Point(Unit(COL + 2), Unit(8));
-            Score.Width = Lines.Width = Unit(4);
+            Score.Width = Lines.Width = Unit(CELL);
             // Control
             Timer.Enabled = true;
             this.KeyPreview = true;
@@ -54,12 +54,12 @@ namespace Tetris
             g.Dispose();
             // Preview background
             g = Graphics.FromImage(preview);
-            for (int i = 0; i <= 4; i++)
+            for (int i = 0; i <= CELL; i++)
             {
                 g.DrawLine(penGrid, Unit(i), 0, Unit(i), preview.Height);
                 g.DrawLine(penGrid, 0, Unit(i), preview.Width, Unit(i));
             }
-            g.DrawRectangle(pen, 0, 0, Unit(4), Unit(4));
+            g.DrawRectangle(pen, 0, 0, Unit(CELL), Unit(CELL));
             g.Dispose();
         }
         
@@ -90,7 +90,7 @@ namespace Tetris
             Score.Text = "SCORE\n" + score.ToString();
             System.Threading.Thread.Sleep(Timer.Interval / 10);
             Graphics g = Graphics.FromImage(field);
-            g.DrawImage(tetro.Show(true), tetro.XU, tetro.YU);
+            g.DrawImage(tetro.Show(fixTetro: true), tetro.XU, tetro.YU);
             if (Tetro.Overflow)
             {
                 Timer.Stop();
@@ -99,9 +99,9 @@ namespace Tetris
                 return;
             }
             // clear full row(s)
-            var fullRow = new bool[4];
+            var fullRow = new bool[CELL];
             for (int dy = Math.Max(0, -tetro.Y); 
-                dy < Math.Min(4, ROW - tetro.Y); dy++)
+                dy < Math.Min(CELL, ROW - tetro.Y); dy++)
             {
                 fullRow[dy] = true;
                 for (int x = 0; x < COL; x++)
@@ -117,18 +117,11 @@ namespace Tetris
             }
             if (clearRow)
             {
-                score -= 100; // 200 * line - 100;
-                if (lines > 19)
-                {
-                    if (lines < 310)
-                        Timer.Interval = (31 - lines / 10) * (31 - lines / 10) + 100;
-                    else
-                        Timer.Interval = 100;
-                }
-
+                score -= 100; // score = 200 * clearline - 100;
+                Timer.Interval = 100 + IntSq(Math.Max(30 - lines / 10, 0));
                 Field.Refresh();
                 System.Threading.Thread.Sleep(Timer.Interval * 3 / 10);
-                for (int dy = 0; dy < 4; dy++)
+                for (int dy = 0; dy < CELL; dy++)
                 {
                     if (!fullRow[dy])
                         continue;
@@ -195,10 +188,10 @@ namespace Tetris
             if (!clearRow)
             {
                 if (hint)
-                    e.Graphics.DrawImage(tetro.Hint(), tetro.XU, tetro.YmaxU);
+                    e.Graphics.DrawImage(tetro.Shadow(), tetro.XU, tetro.YmaxU);
                 e.Graphics.DrawImage(tetro.Show(), tetro.XU, tetro.YU);
             }
-            //e.Graphics.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
+            e.Graphics.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
         }
 
         private void Preview_Paint(object sender, PaintEventArgs e)

@@ -4,7 +4,7 @@ using static Tetris.Const;
 
 namespace Tetris
 {
-    public struct Tetro
+    public class Tetro : Tetromino
     {
         private int id; // [0, Tetromino.Count - 1]
         private int spin; // [0, 3]
@@ -14,6 +14,10 @@ namespace Tetris
         // static properties, for Tetris to use
         internal static readonly bool[,] map = new bool[COL, ROW]; // common map
         private static bool overflow = false; // once overflow, game over
+        /*
+        private static readonly int[] in20 = new int[Tetromino.Count],
+            lastId = new int[5];
+        */
 
         public Tetro(int id, int spin, int x = 0, int y = 0)
         {
@@ -21,8 +25,8 @@ namespace Tetris
             this.spin = spin;
             this.x = x;
             this.y = ymax = y; // ymax reserved to update
-            code = Tetromino.All[id].code[spin];
-            brush = new SolidBrush(Tetromino.All[id].color);
+            code = All[id].code[spin];
+            brush = new SolidBrush(All[id].color);
         }
 
         public static void Initialize()
@@ -30,20 +34,27 @@ namespace Tetris
             for (int x = 0; x < COL; x++)
                 for (int y = 0; y < ROW; y++)
                     map[x, y] = false;
+
             overflow = false;
         }
 
-        public static Tetro New()
-        {
-            return new Tetro(random.Next(7), random.Next(4));
-        }
+        public static Tetro New() => new Tetro(
+            id: random.Next(Tetromino.Count), 
+            spin: random.Next(Tetromino.SpinMod));
 
         public void Change()
         {
-            id = random.Next(7); spin = random.Next(4);
-            x = y = 0;
+            id = random.Next(Tetromino.Count); 
+            spin = random.Next(Tetromino.SpinMod);
             code = Tetromino.All[id].code[spin];
             brush.Color = Tetromino.All[id].color;
+        }
+
+        public void Change(int x, int y)
+        {
+            Change();
+            this.x = x; this.y = y;
+            UpdateYmax();
         }
 
         public void Move(in Tetro that)
@@ -51,7 +62,7 @@ namespace Tetris
             id = that.id;
             spin = that.spin;
             x = COL / 2 - 2;
-            y = ymax = -4;
+            y = -CELL;
             code = that.code;
             brush.Color = that.brush.Color;
             UpdateYmax();
@@ -59,13 +70,13 @@ namespace Tetris
             while ((code & probe) == 0)
             {
                 y++; // Move down until the tetro appear
-                probe <<= 4;
+                probe <<= CELL;
             }
         }
 
         public Bitmap Show(bool fixTetro = false)
         {
-            Bitmap bitmap = new Bitmap(Unit(4) + 1, Unit(4) + 1);
+            Bitmap bitmap = new Bitmap(Unit(CELL) + 1, Unit(CELL) + 1);
             Graphics g = Graphics.FromImage(bitmap);
             int probe = 0x8000;
             int dx, dy;
@@ -73,7 +84,7 @@ namespace Tetris
             {
                 if ((code & probe) > 0)
                 {
-                    dx = i % 4; dy = i / 4;
+                    dx = i % CELL; dy = i / CELL;
                     if (fixTetro)
                     { // when the tetro is to fix
                         if (y + dy < 0)
@@ -92,16 +103,16 @@ namespace Tetris
             return bitmap;
         }
 
-        public Bitmap Hint()
+        public Bitmap Shadow()
         {
-            Bitmap bitmap = new Bitmap(Unit(4) + 1, Unit(4) + 1);
+            Bitmap bitmap = new Bitmap(Unit(CELL) + 1, Unit(CELL) + 1);
             Graphics g = Graphics.FromImage(bitmap);
             int probe = 0x8000;
             for (int i = 0; i < 16; i++)
             {
                 if ((code & probe) > 0)
-                    g.FillRectangle(brushHint, Unit(i % 4) + 1,
-                        Unit(i / 4), UNIT - 1, UNIT);
+                    g.FillRectangle(brushHint, Unit(i % CELL) + 1,
+                        Unit(i / CELL), UNIT - 1, UNIT);
                 probe >>= 1;
             }
             return bitmap;
@@ -116,7 +127,7 @@ namespace Tetris
             {
                 if ((code & probe) > 0)
                 {
-                    x = this.x + i % 4; y = this.y + i / 4;
+                    x = this.x + i % CELL; y = this.y + i / CELL;
                     if (x < 0 || x >= COL || y >= ROW ||
                         (y >= 0 && map[x, y]))
                         return false;
@@ -134,10 +145,10 @@ namespace Tetris
             {
                 if ((code & probe) > 0)
                 {
-                    x = this.x + i % 4; y = this.y + i / 4;
+                    x = this.x + i % CELL; y = this.y + i / CELL;
                     while (y < ROW && (y < 0 || !map[x, y]))
                         y++;
-                    ymax = Math.Min(ymax, y - i / 4);
+                    ymax = Math.Min(ymax, y - i / CELL);
                 }
                 probe >>= 1;
             }
@@ -172,7 +183,7 @@ namespace Tetris
 
         public void Rotate()
         {
-            spin = (spin + 1) % 4;
+            spin = (spin + 1) % Tetromino.SpinMod;
             code = Tetromino.All[id].code[spin];
             foreach (var dx in new int[] { 0, 1, 1, -3, -1 })
             {
@@ -184,7 +195,7 @@ namespace Tetris
                 }
             }
             x += 2;
-            spin = (spin + 3) % 4;
+            spin = (spin + 3) % Tetromino.SpinMod;
             code = Tetromino.All[id].code[spin];
         }
 
@@ -232,6 +243,8 @@ namespace Tetris
             this.y = y;
             this.color = color;
         }
+
+        public Block(int x = 0, int y = 0) : this(x, y, lineColor) { }
 
         public Bitmap Show()
         {
