@@ -4,7 +4,7 @@ namespace Tetris
 {
     public readonly struct TetroInfo
     {
-        public readonly int[] code; // int[4]
+        public readonly int[] code; // int[4], 4 orientations
         public readonly Color color;
         public TetroInfo(int[] code, Color color)
         {
@@ -13,11 +13,11 @@ namespace Tetris
         }
     }
 
-    public class Tetromino
+    public abstract class Tetromino : Entity // C# don't allow multiple inheritance for Tetro
     {
-        protected const int Count = 7, // All.Length;
-            SpinMod = 4;
-        protected static readonly TetroInfo[] All = { I, O, T, L, J, Z, S };
+        public const int TypeNumber = 7, // All.Length;
+            SpinModule = 4;
+        protected static readonly TetroInfo[] BasicSet = { I, O, T, L, J, Z, S };
         // private: 7 basic Tetromino
         private static TetroInfo I => new TetroInfo(new int[] { 0x0F00, 0x4444, 0x0F00, 0x4444 }, Color.Red);
         private static TetroInfo O => new TetroInfo(new int[] { 0x0660, 0x0660, 0x0660, 0x0660 }, Color.Orange);
@@ -26,7 +26,6 @@ namespace Tetris
         private static TetroInfo J => new TetroInfo(new int[] { 0x2260, 0x0E20, 0x6440, 0x0470 }, Color.Purple);
         private static TetroInfo Z => new TetroInfo(new int[] { 0x0C60, 0x2640, 0x0C60, 0x2640 }, Color.Green);
         private static TetroInfo S => new TetroInfo(new int[] { 0x0360, 0x4620, 0x0360, 0x4620 }, Color.Cyan);
-        // special
-        private static TetroInfo X => new TetroInfo(new int[] { 0x0400, 0x0400, 0x0400, 0x0400 }, Color.White);
+        // private static TetroInfo X => new TetroInfo(new int[] { 0x0400, 0x0400, 0x0400, 0x0400 }, Color.White);
     }
 }

@@ -1,23 +1,21 @@
 ﻿using System;
 using System.Drawing;
+using System.Linq;
 using static Tetris.Const;
 
 namespace Tetris
 {
     public class Tetro : Tetromino
     {
-        private int id; // [0, Tetromino.Count - 1]
-        private int spin; // [0, 3]
-        private int x, y, ymax; // block coordinate
+        private int id; // < Tetromino.TypeNumber
+        private int spin; // < Tetromino.SpinModule, i.e. orientation
+        private int ymax; // block coordinate
+        // private
         private int code;
-        private readonly SolidBrush brush; // fill color
-        // static properties, for Tetris to use
-        internal static readonly bool[,] map = new bool[COL, ROW]; // common map
-        private static bool overflow = false; // once overflow, game over
-        /*
-        private static readonly int[] in20 = new int[Tetromino.Count],
-            lastId = new int[5];
-        */
+        private readonly SolidBrush brush; // fill color        
+        // neither real nor pesudo random
+        private const int MAXREPEAT = 2;
+        private static readonly int[] counts = new int[TypeNumber];
 
         public Tetro(int id, int spin, int x = 0, int y = 0)
         {
@@ -25,29 +23,27 @@ namespace Tetris
             this.spin = spin;
             this.x = x;
             this.y = ymax = y; // ymax reserved to update
-            code = All[id].code[spin];
-            brush = new SolidBrush(All[id].color);
+            code = BasicSet[id].code[spin];
+            brush = new SolidBrush(BasicSet[id].color);
         }
 
-        public static void Initialize()
-        {
-            for (int x = 0; x < COL; x++)
-                for (int y = 0; y < ROW; y++)
-                    map[x, y] = false;
-
-            overflow = false;
-        }
+        public Tetro() : this(0, 0) { }
 
         public static Tetro New() => new Tetro(
-            id: random.Next(Tetromino.Count), 
-            spin: random.Next(Tetromino.SpinMod));
+            id: random.Next(TypeNumber), spin: random.Next(SpinModule));
 
         public void Change()
         {
-            id = random.Next(Tetromino.Count); 
-            spin = random.Next(Tetromino.SpinMod);
-            code = Tetromino.All[id].code[spin];
-            brush.Color = Tetromino.All[id].color;
+            if (counts.Sum() >= MAXREPEAT * TypeNumber)
+                for (int i = 0; i < TypeNumber; i++)
+                    counts[i] = 0;
+            do
+            {
+                id = random.Next(TypeNumber);
+            } while (counts[id] >= MAXREPEAT);
+            counts[id]++;
+            Spin = random.Next(SpinModule);
+            brush.Color = BasicSet[id].color;
         }
 
         public void Change(int x, int y)
@@ -57,7 +53,7 @@ namespace Tetris
             UpdateYmax();
         }
 
-        public void Move(in Tetro that)
+        public void Spawn(in Tetro that)
         {
             id = that.id;
             spin = that.spin;
@@ -74,7 +70,7 @@ namespace Tetris
             }
         }
 
-        public Bitmap Show(bool fixTetro = false)
+        public Bitmap Piece(bool lockTetro = false)
         {
             Bitmap bitmap = new Bitmap(Unit(CELL) + 1, Unit(CELL) + 1);
             Graphics g = Graphics.FromImage(bitmap);
@@ -85,15 +81,15 @@ namespace Tetris
                 if ((code & probe) > 0)
                 {
                     dx = i % CELL; dy = i / CELL;
-                    if (fixTetro)
+                    if (lockTetro)
                     { // when the tetro is to fix
                         if (y + dy < 0)
-                            overflow = true; // game over
+                            topout = true; // game over
                         else
-                            map[x + dx, y + dy] = true;
+                            matrix[x + dx, y + dy] = true;
                     }
-                    g.FillRectangle(brush, Unit(dx), Unit(dy), UNIT, UNIT);
-                    g.DrawRectangle(pen, Unit(dx), Unit(dy), UNIT, UNIT);
+                    g.FillRectangle(brush, Unit(dx), Unit(dy), Unit(), Unit());
+                    g.DrawRectangle(pen, Unit(dx), Unit(dy), Unit(), Unit());
                 }
                 probe >>= 1;
             }
@@ -101,7 +97,7 @@ namespace Tetris
             return bitmap;
         }
 
-        public Bitmap Shadow()
+        public Bitmap Ghost()
         {
             Bitmap bitmap = new Bitmap(Unit(CELL) + 1, Unit(CELL) + 1);
             Graphics g = Graphics.FromImage(bitmap);
@@ -109,10 +105,11 @@ namespace Tetris
             for (int i = 0; i < 16; i++)
             {
                 if ((code & probe) > 0)
-                    g.FillRectangle(brushHint, Unit(i % CELL) + 1,
-                        Unit(i / CELL), UNIT - 1, UNIT);
+                    g.FillRectangle(brushGhost, Unit(i % CELL) + 1,
+                        Unit(i / CELL), Unit() - 1, Unit());
                 probe >>= 1;
             }
+            g.Dispose();
             return bitmap;
         }
 
@@ -127,7 +124,7 @@ namespace Tetris
                 {
                     x = this.x + i % CELL; y = this.y + i / CELL;
                     if (x < 0 || x >= COL || y >= ROW ||
-                        (y >= 0 && map[x, y]))
+                        (y >= 0 && matrix[x, y]))
                         return false;
                 }
                 probe >>= 1;
@@ -144,13 +141,43 @@ namespace Tetris
                 if ((code & probe) > 0)
                 {
                     x = this.x + i % CELL; y = this.y + i / CELL;
-                    while (y < ROW && (y < 0 || !map[x, y]))
+                    while (y < ROW && (y < 0 || !matrix[x, y]))
                         y++;
                     ymax = Math.Min(ymax, y - i / CELL);
                 }
                 probe >>= 1;
             }
             this.ymax = ymax - 1;
+        }
+
+        public static void Initialize()
+        {
+            for (int x = 0; x < COL; x++)
+                for (int y = 0; y < ROW; y++)
+                    matrix[x, y] = false;
+            for (int i = 0; i < TypeNumber; i++)
+                counts[i] = 0;
+            topout = false;
+        }
+
+        public static bool LineFilled(int y)
+        {
+            if (y < 0 || y >= ROW)
+                return false;
+            for (int x = 0; x < COL; x++)
+                if (!matrix[x, y])
+                    return false;
+            return true;
+        }
+
+        public static void LineSettle(int y)
+        {
+            for (int x = 0; x < COL; x++)
+            {
+                for (int j = y; j > 0; j--)
+                    matrix[x, j] = matrix[x, j - 1];
+                matrix[x, 0] = false;
+            }
         }
 
         #region operation
@@ -164,7 +191,7 @@ namespace Tetris
             x++; if (!Feasible()) x--; else UpdateYmax();
         }
 
-        public bool Fall()
+        public bool Drop()
         {
             if (y < ymax)
             {
@@ -181,100 +208,64 @@ namespace Tetris
 
         public void Rotate()
         {
-            spin = (spin + 1) % Tetromino.SpinMod;
-            code = Tetromino.All[id].code[spin];
-            foreach (var dx in new int[] { 0, 1, 1, -3, -1 })
-            {
-                x += dx;
-                if (Feasible())
-                {
-                    UpdateYmax();
-                    return;
-                }
-            }
-            x += 2;
-            spin = (spin + 3) % Tetromino.SpinMod;
-            code = Tetromino.All[id].code[spin];
+            Spin++;
+            if (Offsetable())
+                return;
+            Spin--;
         }
 
-        public void RotateBack()
+        public void CounterRotate()
         {
-            spin = (spin + 3) % Tetromino.SpinMod;
-            code = Tetromino.All[id].code[spin];
-            foreach (var dx in new int[] { 0, 1, 1, -3, -1 })
-            {
-                x += dx;
-                if (Feasible())
-                {
-                    UpdateYmax();
-                    return;
-                }
-            }
-            x += 2;
-            spin = (spin + 1) % Tetromino.SpinMod;
-            code = Tetromino.All[id].code[spin];
+            Spin--;
+            if (Offsetable())
+                return;
+            Spin++;
         }
 
         public void Swap(ref Tetro that)
         {
             (ExceptXY, that.ExceptXY) = (that.ExceptXY, ExceptXY);
+            if (Offsetable())
+                return;
+            (ExceptXY, that.ExceptXY) = (that.ExceptXY, ExceptXY);
+        }
+
+        private bool Offsetable()
+        {
             foreach (var dx in new int[] { 0, 1, 1, -3, -1 })
             {
                 x += dx;
                 if (Feasible())
                 {
                     UpdateYmax();
-                    return;
+                    return true;
                 }
             }
             x += 2;
-            (ExceptXY, that.ExceptXY) = (that.ExceptXY, ExceptXY);
+            return false;
         }
-
         #endregion
 
-        #region get & set
-        public int X => x;
-        public int Y => y;
         public int Ymax => ymax;
-        public static bool Overflow => overflow;
-        public int XU => x * UNIT;
-        public int YU => y * UNIT;
-        public int YmaxU => ymax * UNIT;
+        public int YmaxU => Unit(ymax);
+        private int Spin
+        {
+            get => spin;
+            set
+            {
+                spin = value % SpinModule;
+                if (spin < 0) // value < 0
+                    spin += SpinModule;
+                code = BasicSet[id].code[spin]; // update code
+            }
+        }
         private (int, int, int, Color) ExceptXY
         {
-            get { return (id, spin, code, brush.Color); }
-            set { (id, spin, code, brush.Color) = value; }
+            get => (id, spin, code, brush.Color);
+            set => (id, spin, code, brush.Color) = value;
         }
-        #endregion
-    }
-
-    public class Block
-    {
-        private int x, y;
-        private readonly Color color;
-        public Block(int x, int y, Color color)
-        {
-            this.x = x;
-            this.y = y;
-            this.color = color;
-        }
-
-        public Block(int x = 0, int y = 0) : this(x, y, lineColor) { }
-
-        public Bitmap Show()
-        {
-            Tetro.map[x, y] = true;
-            Bitmap bitmap = new Bitmap(UNIT + 1, UNIT + 1);
-            Graphics.FromImage(bitmap).Clear(color);
-            return bitmap;
-        }
-
-        public bool Occupied => Tetro.map[x, y];
-        public int X { get => x; set => x = value; }
-        public int Y { get => y; set => y = value; }
-        public int XU => x * UNIT;
-        public int YU => y * UNIT;
+        public static bool Matrix(int x, int y) => matrix[x, y];
+        public static bool TopOut => topout;
     }
 
 }
