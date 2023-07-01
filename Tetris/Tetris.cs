@@ -9,12 +9,12 @@ namespace Tetris
 {
     public partial class Tetris : Form
     {
-        private Tetro tetro = new Tetro(),
-            tetroNext = Tetro.New();
+        private Tetro tetro = new Tetro(), tetroNext = new Tetro();
         private int score = 0, lines = 0;
-        private bool hint = false, clearRow = false;
+        private bool hint = false, clearLine = false;
         private Block garbage = new Block();
         private readonly Bitmap background, field, preview;
+        private readonly Graphics graphics;
 
         public Tetris()
         {
@@ -31,6 +31,7 @@ namespace Tetris
             Field.BackColor = Color.Black;
             background = new Bitmap(Field.Width, Field.Height);
             field = new Bitmap(Field.Width, Field.Height);
+            graphics = Graphics.FromImage(field);
             // Preview
             Preview.Location = new Point(Unit(COL + 2), Unit());
             Preview.Size = new Size(Unit(CELL) + 1, Unit(CELL) + 1);
@@ -71,8 +72,9 @@ namespace Tetris
             Lines.Text = "LINES\n" + lines.ToString();
             Timer.Interval = 1000;
             Tetro.Initialize();
-            Graphics.FromImage(field).Clear(Color.Transparent);
-            // AddObstacle();
+            graphics.Clear(Color.Transparent);
+            // Opening();
+            tetroNext.Change();
             NewTetro();
         }
 
@@ -91,8 +93,7 @@ namespace Tetris
             score++;
             Score.Text = "SCORE\n" + score.ToString();
             Thread.Sleep(Timer.Interval / 10);
-            Graphics g = Graphics.FromImage(field);
-            g.DrawImage(tetro.Piece(lockTetro: true), tetro.XU, tetro.YU);
+            graphics.DrawImage(tetro.Piece, tetro.XU, tetro.YU);
             if (Tetro.TopOut)
             {
                 Field.Refresh();
@@ -101,48 +102,47 @@ namespace Tetris
                 NewGame();
                 return;
             }
-            // clear full row(s)
-            var fullRow = new bool[CELL];
+            // clear full line(s)
+            var linefilled = new bool[CELL];
             for (int y = tetro.Y; y < tetro.Y + CELL; y++)
             {
                 if (!Tetro.LineFilled(y))
                     continue;
-                fullRow[y - tetro.Y] = clearRow = true;
-                g.FillRectangle(brushLine, 0, Unit(y), field.Width, Unit());
-                lines++; score += 200;
+                linefilled[y - tetro.Y] = clearLine = true;
+                graphics.FillRectangle(brushLine, 0, Unit(y), field.Width, Unit());
+                lines++; 
+                score += 200;
             }
             Lines.Text = "LINES\n" + lines.ToString();
-            if (clearRow)
+            if (clearLine)
             {
                 Field.Refresh();
                 Thread.Sleep(Timer.Interval * 3 / 10);
                 for (int y = tetro.Y; y < tetro.Y + CELL; y++)
                 {
-                    if (!fullRow[y - tetro.Y])
+                    if (!linefilled[y - tetro.Y])
                         continue;
                     Tetro.LineSettle(y);
                     // image
-                    g.CompositingMode = CompositingMode.SourceCopy;
+                    graphics.CompositingMode = CompositingMode.SourceCopy;
                     Bitmap fieldAbove = field.Clone(new Rectangle(0, 0, field.Width, Unit(y)), field.PixelFormat);
-                    g.FillRectangle(eraser, 0, 0, field.Width, Unit(y + 1) + 1);
-                    g.DrawImage(fieldAbove, 0, Unit());
+                    graphics.FillRectangle(eraser, 0, 0, field.Width, Unit(y + 1) + 1);
+                    graphics.DrawImage(fieldAbove, 0, Unit());
+                    graphics.CompositingMode = CompositingMode.SourceOver;
                     for (int x = 0; x < COL; x++)
                         if (Tetro.Matrix(x, y) || (y + 1 < ROW && Tetro.Matrix(x, y + 1)))
-                            g.DrawLine(pen, Unit(x), Unit(y + 1), Unit(x + 1), Unit(y + 1));
+                            graphics.DrawLine(pen, Unit(x), Unit(y + 1), Unit(x + 1), Unit(y + 1));
                 }
                 score -= 100; // score = 200 * clearline - 100;
                 Score.Text = "SCORE\n" + score.ToString();
                 Timer.Interval = 100 + Pow2(Math.Max(30 - lines / 10, 0));
-                clearRow = false;
+                clearLine = false;
             }
-            g.Dispose();
             NewTetro();
         }
 
-        private void Garbage()
+        private void Opening()
         {
-            // obstacle
-            Graphics g = Graphics.FromImage(field);
             for (int i = 0; i < COL * ROW / 4; i++)
             {
                 bool fullrow = true;
@@ -162,9 +162,8 @@ namespace Tetris
                         }
                     }
                 } while (fullrow);
-                g.DrawImage(garbage.Show(), garbage.XU, garbage.YU);
+                graphics.DrawImage(garbage.Show(), garbage.XU, garbage.YU);
             }
-            g.Dispose();
         }
         #endregion
 
@@ -172,11 +171,11 @@ namespace Tetris
         {
             e.Graphics.DrawImage(background, 0, 0);
             e.Graphics.DrawImage(field, 0, 0);
-            if (!clearRow)
+            if (!clearLine)
             {
                 if (hint)
-                    e.Graphics.DrawImage(tetro.Ghost(), tetro.XU, tetro.YmaxU);
-                e.Graphics.DrawImage(tetro.Piece(), tetro.XU, tetro.YU);
+                    e.Graphics.DrawImage(tetro.Ghost, tetro.XU, tetro.YmaxU);
+                e.Graphics.DrawImage(tetro.Piece, tetro.XU, tetro.YU);
             }
             e.Graphics.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
         }
@@ -184,7 +183,7 @@ namespace Tetris
         private void Preview_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.DrawImage(preview, 0, 0);
-            e.Graphics.DrawImage(tetroNext.Piece(), 0, 0);
+            e.Graphics.DrawImage(tetroNext.Piece, 0, 0);
         }
 
         #region Keyboard Control
@@ -232,9 +231,8 @@ namespace Tetris
                     Preview.Refresh();
                     break;
                 case Keys.R: // restart
-                    CheckBox infoBox = new CheckBox("restart?");
                     Timer.Stop();
-                    if (infoBox.ShowDialog() == DialogResult.Yes)
+                    if (new CheckBox("restart?").ShowDialog() == DialogResult.Yes)
                         NewGame();
                     Timer.Start();
                     break;
