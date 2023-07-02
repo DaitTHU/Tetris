@@ -46,14 +46,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Block.cs" />
+    <Compile Include="classes\Block.cs" />
     <Compile Include="CheckBox.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="CheckBox.Designer.cs">
       <DependentUpon>CheckBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="Const.cs" />
+    <Compile Include="classes\Const.cs" />
+    <Compile Include="classes\Entity.cs" />
+    <Compile Include="classes\IPiece.cs" />
     <Compile Include="Tetris.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -62,8 +64,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Tetro.cs" />
-    <Compile Include="Tetromino.cs" />
+    <Compile Include="classes\Tetro.cs" />
+    <Compile Include="classes\TetroInfo.cs" />
+    <Compile Include="classes\Tetromino.cs" />
     <EmbeddedResource Include="CheckBox.resx">
       <DependentUpon>CheckBox.cs</DependentUpon>
     </EmbeddedResource>

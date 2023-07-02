@@ -5,10 +5,10 @@ using static Tetris.Const;
 
 namespace Tetris
 {
-    public class Tetro : Tetromino
+    public class Tetro : Tetromino, IPiece
     {
-        private int id; // < Tetromino.TypeNumber
-        private int spin; // < Tetromino.SpinModule, i.e. orientation
+        private int id; // < Tetromino.TYPE
+        private int spin; // < Tetromino.SPIN, i.e. orientation
         private int ymax; // block coordinate   
         // neither real nor pesudo random
         private const int REPEAT = 1; // bg7
@@ -34,7 +34,7 @@ namespace Tetris
                 id = random.Next(TYPE);
             } while (counts[id] >= REPEAT);
             counts[id]++;
-            Spin = random.Next(SPIN);
+            spin = random.Next(SPIN);
         }
 
         public void Spawn(in Tetro that)
@@ -48,12 +48,9 @@ namespace Tetris
                 y++; // Move down until the tetro appear
         }
 
-        public static void Initialize()
+        public static new void Initialize()
         {
-            for (int x = 0; x < COL; x++)
-                for (int y = 0; y < ROW; y++)
-                    matrix[x, y] = false;
-            topout = false;
+            Entity.Initialize();
             for (int i = 0; i < TYPE; i++)
                 counts[i] = 0;
         }
@@ -135,26 +132,19 @@ namespace Tetris
 
         public void Rotate()
         {
-            Spin++;
-            if (Offsetable())
-                return;
-            Spin--;
+            Spin++; if (!Offsetable()) Spin--;
         }
 
         public void CounterRotate()
         {
-            Spin--;
-            if (Offsetable())
-                return;
-            Spin++;
+            Spin--; if (!Offsetable()) Spin++;
         }
 
         public void Swap(ref Tetro that)
         {
             (Shape, that.Shape) = (that.Shape, Shape);
-            if (Offsetable())
-                return;
-            (Shape, that.Shape) = (that.Shape, Shape);
+            if (!Offsetable())
+                (Shape, that.Shape) = (that.Shape, Shape);
         }
 
         private bool Feasible()
@@ -232,7 +222,6 @@ namespace Tetris
         }
         #endregion
 
-        public int Ymax => ymax;
         public int YmaxU => Unit(ymax);
         private int Spin
         {
@@ -251,10 +240,12 @@ namespace Tetris
         }
         public static bool Matrix(int x, int y) => matrix[x, y];
         public int Code => Tetromino.BasicSet[id].codes[spin];
-        public Bitmap Piece => Tetromino.BasicSet[id].pieces[spin];
-        public Bitmap Ghost => Tetromino.BasicSet[id].ghosts[spin];
-        public bool Empty(int dx, int dy) => (Code & (1 << (15 - dx - dy * CELL))) == 0;
+        public ref readonly Bitmap Piece => 
+            ref Tetromino.BasicSet[id].pieces[spin];
+        public ref readonly Bitmap Ghost => 
+            ref Tetromino.BasicSet[id].ghosts[spin];
+        public bool Empty(int dx, int dy) => 
+            (Code & (1 << (15 - dx - dy * CELL))) == 0;
         public static bool TopOut => topout;
     }
-
 }
