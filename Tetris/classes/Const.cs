@@ -9,7 +9,7 @@ namespace Tetris
         private const int UNIT = 35;
         public const int COL = 10, ROW = 20, CELL = 4;
         public const int SPIN = 4;
-        public const int lineWidth = 10;
+        public const int lineWidth = 1;
         internal static readonly Color 
             gridColor = Color.DimGray,
             lineColor = Color.White;

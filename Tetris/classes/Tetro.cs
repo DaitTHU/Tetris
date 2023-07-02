@@ -65,24 +65,30 @@ namespace Tetris
             return true;
         }
 
-        public static void LineSettle(int y)
+        public static void LineSettle(int yClear)
         {
-            while (y > 0)
+            for (int x = 0; x < COL; x++)
             {
-                for (int x = 0; x < COL; x++)
+                for (int y = yClear; y > 0; y--)
                     matrix[x, y] = matrix[x, y - 1];
-                y--;
-            }
-            for (int x = 0; x < COL; x++)
                 matrix[x, 0] = false;
-            /* 
+            }
+        }
+
+        public static void LineRise(int height)
+        {
             for (int x = 0; x < COL; x++)
             {
-                for (int j = y; j > 0; j--)
-                    matrix[x, j] = matrix[x, j - 1];
-                matrix[x, 0] = false;
+                for (int y = 0; y < ROW; y++)
+                {
+                    if (y < height && matrix[x, y])
+                        topout = true;
+                    if (y < ROW - height)
+                        matrix[x, y] = matrix[x, y + height];
+                    else
+                        matrix[x, y] = false;
+                }
             }
-            */
         }
 
         #region operation

@@ -55,7 +55,7 @@ namespace Tetris
                 g.DrawLine(penGrid, Unit(x), 0, Unit(x), field.Height);
             for (int y = 0; y <= ROW; y++)
                 g.DrawLine(penGrid, 0, Unit(y), field.Width, Unit(y));
-            g.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
+            //g.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
             g.Dispose();
             // Preview background
             g = Graphics.FromImage(preview);
@@ -78,7 +78,7 @@ namespace Tetris
             Timer.Interval = 1000;
             Tetro.Initialize();
             graphics.Clear(Color.Transparent);
-            NewGarbage(ROW / 2);
+            // NewGarbage(ROW / 2);
             tetroNext.Change();
             NewTetro();
         }
@@ -133,6 +133,7 @@ namespace Tetris
                     Bitmap fieldAbove = field.Clone(new Rectangle(0, 0, field.Width, Unit(y)), field.PixelFormat);
                     graphics.FillRectangle(eraser, 0, 0, field.Width, Unit(y + 1) + 1);
                     graphics.DrawImage(fieldAbove, 0, Unit());
+                    fieldAbove.Dispose();
                     graphics.CompositingMode = CompositingMode.SourceOver;
                     for (int x = 0; x < COL; x++)
                         if (Tetro.Matrix(x, y) || (y + 1 < ROW && Tetro.Matrix(x, y + 1)))
@@ -143,12 +144,23 @@ namespace Tetris
                 Timer.Interval = 100 + Pow2(Math.Max(30 - lines / 10, 0));
                 clearLine = false;
             }
+            if (score % 5 == 0)
+                NewGarbage(2);
             NewTetro();
         }
 
         private void NewGarbage(int height, int number = int.MaxValue)
         {
-            // height = Math.Max(0, height);
+            height = Math.Min(Math.Max(1, height), ROW - 1);
+            int yBase = ROW - height;
+            Tetro.LineRise(height);
+            Bitmap fieldAbove = field.Clone(new Rectangle(0, Unit(height), field.Width, Unit(yBase)), field.PixelFormat);
+            graphics.Clear(Color.Transparent);
+            graphics.DrawImage(fieldAbove, 0, 0);
+            fieldAbove.Dispose();
+            for (int x = 0; x < COL; x++)
+                if (Tetro.Matrix(x, yBase - 1) || Tetro.Matrix(x, yBase))
+                    graphics.DrawLine(pen, Unit(x), Unit(yBase), Unit(x + 1), Unit(yBase));
             number = Math.Min(number, height * (COL - 1));
             for (int i = 0; i < number; i++)
             {
