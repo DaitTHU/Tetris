@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Tetris));
             this.Field = new System.Windows.Forms.PictureBox();
             this.Preview = new System.Windows.Forms.PictureBox();
             this.Timer = new System.Windows.Forms.Timer(this.components);
@@ -100,6 +101,7 @@
             this.Controls.Add(this.Preview);
             this.Controls.Add(this.Field);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
             this.Name = "Tetris";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

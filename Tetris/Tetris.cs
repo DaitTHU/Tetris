@@ -55,7 +55,7 @@ namespace Tetris
                 g.DrawLine(penGrid, Unit(x), 0, Unit(x), field.Height);
             for (int y = 0; y <= ROW; y++)
                 g.DrawLine(penGrid, 0, Unit(y), field.Width, Unit(y));
-            //g.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
+            g.DrawRectangle(pen, 0, 0, Unit(COL), Unit(ROW));
             g.Dispose();
             // Preview background
             g = Graphics.FromImage(preview);
@@ -78,7 +78,7 @@ namespace Tetris
             Timer.Interval = 1000;
             Tetro.Initialize();
             graphics.Clear(Color.Transparent);
-            // NewGarbage(ROW / 2);
+            NewGarbage(ROW / 4);
             tetroNext.Change();
             NewTetro();
         }
@@ -145,11 +145,11 @@ namespace Tetris
                 clearLine = false;
             }
             if (score % 5 == 0)
-                NewGarbage(2);
+                NewGarbage();
             NewTetro();
         }
 
-        private void NewGarbage(int height, int number = int.MaxValue)
+        private void NewGarbage(int height = 1, int number = int.MaxValue)
         {
             height = Math.Min(Math.Max(1, height), ROW - 1);
             int yBase = ROW - height;
@@ -166,6 +166,15 @@ namespace Tetris
             {
                 garbage.Change(height);
                 graphics.DrawImage(garbage.Piece, garbage.XU, garbage.YU);
+            }
+            if (Tetro.TopOut)
+            {
+                clearLine = true; // just for not to show ghost
+                Field.Refresh();
+                Timer.Stop();
+                new InfoBox("game over!");
+                NewGame();
+                return;
             }
         }
         #endregion
@@ -234,7 +243,7 @@ namespace Tetris
                     break;
                 case Keys.R: // restart
                     Timer.Stop();
-                    //if (new CheckBox("restart?").ShowDialog() == DialogResult.Yes)
+                    if (new CheckBox("restart?").ShowDialog() == DialogResult.Yes)
                         NewGame();
                     Timer.Start();
                     break;
